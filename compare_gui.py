@@ -34,7 +34,7 @@ class View(tk.Tk):
         self.columnconfigure(3, weight=1)
         self.columnconfigure(4, weight=1)
         self.rowconfigure(10, weight=1)
-        self.rowconfigure(12, weight=1)
+        # self.rowconfigure(12, weight=1)
 
         self.bind("<Button-4>", lambda e: self.on_back_button())
         self.bind("<Button-5>", lambda e: self.on_forward_button())
@@ -65,20 +65,34 @@ class View(tk.Tk):
         self.label_path_val.bind("<KeyRelease>", lambda e: self.set_cur_path(None))
 
         self.listbox_top = tk.Listbox(self, width=30, height=20, font=("Courier", 12), activestyle="none")
+        scrollbar_top = tk.Scrollbar(self, command=self.listbox_top.xview, orient=tk.HORIZONTAL)
+        self.listbox_top.config(xscrollcommand=scrollbar_top.set)
         self.listbox_top.grid(row=10, column=2, columnspan=3, padx=3, pady=3, sticky="nsew")
+        scrollbar_top.grid(row=11, column=2, columnspan=3, sticky="nsew")
         self.listbox_top.bind("<Double-Button-1>", lambda e: self.listbox_top_double_click(e))
 
         self.label_list_left = tk.Label(self, text="Deleted Files:", justify="left", font=("Helvetica", 12))
         self.label_list_right = tk.Label(self, text="New Files:", justify="left", font=("Helvetica", 12))
-        self.label_list_left.grid(row=11, column=2, columnspan=2, padx=3, sticky="w")
-        self.label_list_right.grid(row=11, column=4, columnspan=2, padx=3, sticky="w")
+        self.label_list_left.grid(row=14, column=2, columnspan=2, padx=3, sticky="w")
+        self.label_list_right.grid(row=14, column=4, columnspan=2, padx=3, sticky="w")
 
-        self.listbox_left = tk.Listbox(self, width=30, height=20, font=("Helvetica", 12))
-        self.listbox_right = tk.Listbox(self, width=30, height=20, font=("Helvetica", 12))
-        self.listbox_left.grid(row=12, column=2, columnspan=2, padx=3, sticky="nsew")
-        self.listbox_right.grid(row=12, column=4, columnspan=2, padx=3, sticky="nsew")
+        self.listbox_left = tk.Listbox(self, width=30, height=5, font=("Helvetica", 12))
+        self.listbox_right = tk.Listbox(self, width=30, height=5, font=("Helvetica", 12))
+        scrollbar_left = tk.Scrollbar(self, command=self.listbox_left.yview)
+        scrollbar_right = tk.Scrollbar(self, command=self.listbox_right.yview)
+        self.listbox_left.config(yscrollcommand=scrollbar_left.set)
+        self.listbox_right.config(yscrollcommand=scrollbar_right.set)
+        self.listbox_left.grid(row=17, column=2, columnspan=2, padx=3, sticky="nsew")
+        self.listbox_right.grid(row=17, column=4, columnspan=2, padx=3, sticky="nsew")
+        scrollbar_left.grid(row=17, column=1, sticky="nsew")
+        scrollbar_right.grid(row=17, column=5, sticky="nsew")
         self.listbox_left.config(state="disabled")
         self.listbox_right.config(state="disabled")
+        # scrollbar.config(command=self.on_scroll)
+
+    def on_scroll(self, *args):
+        self.listbox_left.yview(*args)
+        self.listbox_right.yview(*args)
 
     def add_new_image_file(self, side_str, file_path=None):
         if side_str == 'left':
@@ -110,7 +124,7 @@ class View(tk.Tk):
                 messagebox.showwarning("Warning", "This file is not a valid json file. Reason: " + str(e))
                 return
         if self.old_image is not None and self.new_image is not None:
-            print('both images loaded')
+            # print('both images loaded')
             self.root_node = main.get_tree(self.old_image['root'], self.new_image['root'], root_name='.')
             self.set_cur_path('./')
             if self.root_node.stats_deep['dirs']['common'] == 0 and self.root_node.stats_deep['files']['common'] == 0:
@@ -193,14 +207,10 @@ class View(tk.Tk):
         for i, item in enumerate(right):
             self.listbox_right.insert(i, item)
             self.listbox_right.itemconfig(i, bg=BG_COLORS['green'])
-        if len(left) > 0:
-            self.listbox_left.config(bg=BG_COLORS['red'], fg="black")
-        else:
-            self.listbox_left.config(bg=BG_COLORS['white'], fg="black")
-        if len(right) > 0:
-            self.listbox_right.config(bg=BG_COLORS['green'], fg="black")
-        else:
-            self.listbox_right.config(bg=BG_COLORS['white'], fg="black")
+        self.listbox_left.config(bg=BG_COLORS['red' if len(left) > 0 else 'white'], fg="black")
+        self.listbox_right.config(bg=BG_COLORS['green' if len(right) > 0 else 'white'], fg="black")
+        self.listbox_left.config(height=min(10, max(5, len(left))) + 1)
+        self.listbox_right.config(height=min(10, max(5, len(right))) + 1)
         # self.listbox_left.config(state="disabled")
         # self.listbox_right.config(state="disabled")
         # self.listbox_left.configure({'disabledbackground': '#FFAAAA'})
@@ -230,10 +240,10 @@ class View(tk.Tk):
         return f'{new_status} {node.name:<20} {is_same} {stats[0]:>6} {stats[1]:>6} {stats[2]:>6} {stats[3]:>6}'
 
     def create_new_image(self):
-        folder_selected = filedialog.askdirectory()
+        folder_selected = filedialog.askdirectory(initialdir=os.getcwd(), title="Select Folder to save as New Image")
         if folder_selected == "":
             return
-        print(folder_selected)
+        # print(folder_selected)
         new_dict = main.get_directory_structure(folder_selected)
         default_name = os.path.basename(folder_selected) + '.json'
         save_path = filedialog.asksaveasfilename(
@@ -262,8 +272,8 @@ class View(tk.Tk):
 if __name__ == '__main__':
     view = View()
     frame = tk.Frame(view)
-    view.add_new_image_file('left', r'M:\MyFiles\Code\Python\Scripts\directory_tree_save_and_compare\temp1.json')
-    view.add_new_image_file('right', r'M:\MyFiles\Code\Python\Scripts\directory_tree_save_and_compare\temp2.json')
-    # view.add_new_image_file('left', r'M:\MyFiles\Code\Python\Scripts\directory_tree_save_and_compare\result_after_everything_ssd2tb.json')
-    # view.add_new_image_file('right', r'M:\MyFiles\Code\Python\Scripts\directory_tree_save_and_compare\result_night_after.json')
+    # view.add_new_image_file('left', r'M:\MyFiles\Code\Python\Scripts\directory_tree_save_and_compare\jsons\temp1.json')
+    # view.add_new_image_file('right', r'M:\MyFiles\Code\Python\Scripts\directory_tree_save_and_compare\jsons\temp2.json')
+    # view.add_new_image_file('left', r'M:\MyFiles\Code\Python\Scripts\directory_tree_save_and_compare\jsons\result_after_everything_ssd2tb.json')
+    # view.add_new_image_file('right', r'M:\MyFiles\Code\Python\Scripts\directory_tree_save_and_compare\jsons\result_night_after.json')
     view.mainloop()
