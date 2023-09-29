@@ -1,0 +1,19 @@
+{
+    "INFO": {
+        "rootdir": "M:\\MyFiles\\Code\\Python\\Scripts\\directory_tree_save_and_compare\\new1",
+        "timestamp": "2023/09/29 03:30:23",
+        "time": 1695972623.495199
+    },
+    "root": {
+        "A.txt": null,
+        "B.txt": null,
+        "A": {
+            "subA": {
+                "subAB": {}
+            }
+        },
+        "B": {
+            "Bdel.txt": null
+        }
+    }
+}

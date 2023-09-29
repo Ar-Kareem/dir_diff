@@ -28,9 +28,10 @@ def get_directory_structure(rootdir):
 
 class Node:
     def __init__(self, name, old_path=None, new_path=None, parent=None):
+        assert old_path is not None or new_path is not None, 'both paths are None'
         self.name = name
         self.parent = parent
-        self.children = []
+        self.children: list[Node] = []
         self.old_path = old_path
         self.old_files, self.old_dirs = self.get_files_and_dirs(old_path) if old_path is not None else (set(), set())
         self.new_path = new_path
@@ -54,7 +55,22 @@ class Node:
                 dirs.append(name)
         return set(files), set(dirs)
 
-    def get_stats(self):
+    def has_exclusive_new_content(self):
+        assert self.stats_deep is not None, 'stats_deep is None'
+        return self.old_path is None or self.stats_deep['files']['new_only'] > 0 or self.stats_deep['dirs']['new_only'] > 0
+
+    def has_exclusive_old_content(self):
+        assert self.stats_deep is not None, 'stats_deep is None'
+        return self.new_path is None or self.stats_deep['files']['old_only'] > 0 or self.stats_deep['dirs']['old_only'] > 0
+
+    def is_same(self):
+        if self.new_path is None or self.old_path is None:
+            return False
+        assert self.stats_deep is not None, 'stats_deep is None'
+        # todo make simpler with AND
+        return (self.stats_deep['files']['old_only'], self.stats_deep['files']['new_only'], self.stats_deep['dirs']['old_only'], self.stats_deep['dirs']['new_only']) == (0, 0, 0, 0)
+
+    def _get_stats(self):
         self.stats['files']['old_only'] = len(self.old_files - self.new_files)
         self.stats['files']['new_only'] = len(self.new_files - self.old_files)
         self.stats['files']['common'] = len(self.old_files & self.new_files)
@@ -72,14 +88,14 @@ class Node:
             self.stats['files']['common'] = float('nan')
             self.stats['dirs']['common'] = float('nan')
 
-    def get_stats_deep(self):
+    def _get_stats_deep(self):
         self.stats_deep = {
             'files': {'old_only': 0, 'new_only': 0, 'common': 0},
             'dirs': {'old_only': 0, 'new_only': 0, 'common': 0}
         }
         # make sure children stats are up to date
         for child in self.children:
-            child.get_stats_deep()
+            child._get_stats_deep()
         # sum children stats
         if self.old_path is not None:
             self.stats_deep['files']['old_only'] = self.stats['files']['old_only'] + sum([child.stats_deep['files']['old_only'] for child in self.children])
@@ -93,11 +109,6 @@ class Node:
 
     def __repr__(self):
         return self.full_name
-    
-    def is_same(self):
-        if self.new_path is None or self.old_path is None:
-            return False
-        return (self.stats_deep['files']['old_only'], self.stats_deep['files']['new_only'], self.stats_deep['dirs']['old_only'], self.stats_deep['dirs']['new_only']) == (0, 0, 0, 0)
 
     def get_print_line(self, indent=0):
         result = ' ' * indent
@@ -116,7 +127,14 @@ class Node:
             result += ' >:({} | {})'.format(self.stats_deep['files']['new_only'], self.stats_deep['dirs']['new_only'])
         return result
 
-def build_tree(node):
+def get_tree(old_path, new_path, root_name=''):
+    root = Node(root_name, old_path=old_path, new_path=new_path)
+    root._get_stats()
+    _build_tree(root)
+    root._get_stats_deep()
+    return root
+
+def _build_tree(node):
     combined = set()
     if node.old_path is not None:
         combined |= set(node.old_path.keys())
@@ -130,9 +148,9 @@ def build_tree(node):
             continue
 
         child = Node(name, old_path=old_path, new_path=new_path, parent=node)
-        child.get_stats()
+        child._get_stats()
         node.children.append(child)
-        build_tree(child)
+        _build_tree(child)
 
 
 if __name__=='__main__':
