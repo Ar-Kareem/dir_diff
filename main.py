@@ -30,13 +30,15 @@ def get_directory_structure(rootdir):
         parent[folders[-1]] = subdir
     return res
 
-_wrap_entry = namedtuple( 'DirEntryWrapper', 'name size mtime' )
+_wrap_entry = namedtuple( 'DirEntryWrapper', 'isLeafDir name size mtime' )
 def _myscantree( rootdir, follow_links=False, reldir='' ):
     visited = set()
     rootdir = os.path.normpath(rootdir)
     try:
+        current_scan_count = 0
         with os.scandir(rootdir) as it:
             for entry in it:
+                current_scan_count += 1
                 if entry.is_dir():
                     if not entry.is_symlink() or follow_links:
                         absdir = os.path.relpath(entry.path)
@@ -48,11 +50,20 @@ def _myscantree( rootdir, follow_links=False, reldir='' ):
                 else:
                     st = entry.stat()
                     yield _wrap_entry( 
+                        False,
                         os.path.join(reldir,entry.name), 
                         # entry.is_symlink(),
                         st.st_size,
                         st.st_mtime,
                     )
+        if current_scan_count == 0:  # fix bug where empty folders are not included
+            yield _wrap_entry( 
+                True,
+                reldir, 
+                # entry.is_symlink(),
+                0,
+                0,
+            )
     except PermissionError:
         print('PermissionError', rootdir)
         pass
@@ -85,7 +96,13 @@ def get_directory_structure_v2(rootdir):
         'time': datetime.timestamp(datetime.now()),
         'version': 'v2',
     }
-    for item in _myscantree(rootdir):  # returns individual files
+    for item in _myscantree(rootdir):  # returns individual files or empty directories
+        if item.isLeafDir:  # directory that is empty needs special treatment
+            folders = item.name.split(os.sep)
+            folders = [TOP_LEVEL_NAME] + [f for f in folders if f]
+            parent = reduce(lambda d, k: d[k], folders[:-1], res)  # get the parent folder by recursive dict.get for all folders until leaf
+            parent[folders[-1]] = {}
+            continue
         mtime = datetime.fromtimestamp(item.mtime).strftime("%y/%m/%d %H:%M:%S")
         folders = item.name.split(os.sep)
         folders = [TOP_LEVEL_NAME] + [f for f in folders if f]
