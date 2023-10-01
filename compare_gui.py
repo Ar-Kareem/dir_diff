@@ -14,11 +14,32 @@ BG_COLORS = {
     'yellow': '#FFFFAA',
     'white': '#FFFFFF',
 }
+class SettingsWindow(tk.Toplevel):
+    def __init__(self, parent, compare_settings):
+        super().__init__(parent)
+        self.title("Settings")
+        self.compare_settings = compare_settings
+        
+        self.size_var = tk.BooleanVar(value=compare_settings['size'])
+        self.mtime_var = tk.BooleanVar(value=compare_settings['mtime'])
+        size_checkbox = tk.Checkbutton(self, text="Size", variable=self.size_var)
+        size_checkbox.pack()
+        mtime_checkbox = tk.Checkbutton(self, text="Modification Time", variable=self.mtime_var)
+        mtime_checkbox.pack()
+        save_button = tk.Button(self, text="Save", command=self.save_settings)
+        save_button.pack()
+        
+    def save_settings(self):
+        self.compare_settings['size'] = self.size_var.get()
+        self.compare_settings['mtime'] = self.mtime_var.get()
+        self.destroy()
 
 
 class View(tk.Tk):
     def __init__(self):
         super().__init__()
+
+        self.compare_settings = {'size': True, 'mtime': True}
 
         self.old_image = None
         self.new_image = None
@@ -39,8 +60,10 @@ class View(tk.Tk):
         self.bind("<Button-4>", lambda e: self.on_back_button())
         self.bind("<Button-5>", lambda e: self.on_forward_button())
 
-        self.button_back = tk.Button(self, text="< Back", command=lambda: None)
-        self.button_back.grid(row=0, column=2, columnspan=2, padx=3, pady=3, sticky="w")
+        self.button_back = tk.Button(self, text="<", command=lambda: messagebox.showwarning("Warning", "NANI ?!"))
+        self.button_back.grid(row=0, column=1, columnspan=2, padx=3, pady=3, sticky="w")
+        self.settings_back = tk.Button(self, text="Settings", command=self.open_settings)
+        self.settings_back.grid(row=0, column=2, columnspan=2, padx=3, pady=3, sticky="w")
         self.create_new_image_button = tk.Button(self, text="Create New Image", command=lambda: self.create_new_image())
         self.create_new_image_button.grid(row=0, column=4, columnspan=2, padx=3, pady=3, sticky="e")
 
@@ -94,14 +117,22 @@ class View(tk.Tk):
         self.listbox_left.yview(*args)
         self.listbox_right.yview(*args)
 
+    def open_settings(self):
+        settings_window = SettingsWindow(self, self.compare_settings)
+        settings_window.grab_set()
+        self.wait_window(settings_window)
+        if self.old_image is not None and self.new_image is not None:
+            self.current_node = None  # otherwise it will not refresh the view
+            self.rebuild_tree_and_view(self.cur_path_str, add_to_history=False)
+
     def add_new_image_file(self, side_str, file_path=None):
         if side_str == 'left':
             label = self.label_left
-            image_str = 'old_image'
+            image_str = 'old_image'  # self.old_image
             prefix = 'Old Image: '
         elif side_str == 'right':
             label = self.label_right
-            image_str = 'new_image'
+            image_str = 'new_image'  # self.new_image
             prefix = 'New Image: '
         else:
             assert False, "side_str must be 'left' or 'right'"
@@ -125,10 +156,14 @@ class View(tk.Tk):
                 return
         if self.old_image is not None and self.new_image is not None:
             # print('both images loaded')
-            self.root_node = main.get_tree(self.old_image['root'], self.new_image['root'], root_name='.')
-            self.set_cur_path('./')
-            if self.root_node.stats_deep['dirs']['common'] == 0 and self.root_node.stats_deep['files']['common'] == 0:
-                messagebox.showwarning("Warning", "No common files or directories found. \nThe two images are not related.")
+            self.rebuild_tree_and_view('./')
+
+    def rebuild_tree_and_view(self, path=None, add_to_history=True):
+        assert self.old_image is not None and self.new_image is not None, 'both images not loaded'
+        self.root_node = main.get_tree(self.old_image['root'], self.new_image['root'], compare_settings=self.compare_settings, root_name='.')
+        self.set_cur_path(path, add_to_history=add_to_history)
+        if self.root_node.stats_deep['dirs']['common'] == 0 and self.root_node.stats_deep['files']['common'] == 0:
+            messagebox.showwarning("Warning", "No common files or directories found. \nThe two images are not related.")
 
     def listbox_top_double_click(self, event):
         ind = self.listbox_top.curselection()
@@ -154,6 +189,7 @@ class View(tk.Tk):
         else:
             self.label_path_val.delete(1.0, tk.END)
             self.label_path_val.insert(tk.END, path)
+        self.cur_path_str = path
         cur = self.root_node
         for part in path.replace('\\', '/').split('/'):  # split on / and \\
             if part == '' or part == '.':
@@ -182,9 +218,8 @@ class View(tk.Tk):
                 self.get_node_print_lint(chld),
                 int_to_color[2 * chld.has_exclusive_new_content() + 1 * chld.has_exclusive_old_content()],
             ) for chld in self.top_list_items]
-        del_files = self.current_node.old_files - self.current_node.new_files
-        new_files = self.current_node.new_files - self.current_node.old_files
-        self.set_listboxes(top_lst, del_files, new_files, add_parent=self.current_node.parent is not None)
+        deleted_files, new_files, common_files = self.current_node.get_del_new_common_file_splits() # deleted and newly created files
+        self.set_listboxes(top_lst, deleted_files, new_files, add_parent=self.current_node.parent is not None)
 
     def set_listboxes(self, top, left, right, add_parent=True):
         self.listbox_left.config(state="normal")
@@ -244,7 +279,7 @@ class View(tk.Tk):
         if folder_selected == "":
             return
         # print(folder_selected)
-        new_dict = main.get_directory_structure(folder_selected)
+        new_dict = main.get_directory_structure_v2(folder_selected)
         default_name = os.path.basename(folder_selected) + '.json'
         save_path = filedialog.asksaveasfilename(
             initialdir=os.getcwd(),
@@ -272,8 +307,8 @@ class View(tk.Tk):
 if __name__ == '__main__':
     view = View()
     frame = tk.Frame(view)
-    # view.add_new_image_file('left', r'M:\MyFiles\Code\Python\Scripts\directory_tree_save_and_compare\jsons\temp1.json')
-    # view.add_new_image_file('right', r'M:\MyFiles\Code\Python\Scripts\directory_tree_save_and_compare\jsons\temp2.json')
+    view.add_new_image_file('left', r'M:\MyFiles\Code\Python\Scripts\directory_tree_save_and_compare\jsons\new1.json')
+    view.add_new_image_file('right', r'M:\MyFiles\Code\Python\Scripts\directory_tree_save_and_compare\jsons\new2.json')
     # view.add_new_image_file('left', r'M:\MyFiles\Code\Python\Scripts\directory_tree_save_and_compare\jsons\result_after_everything_ssd2tb.json')
     # view.add_new_image_file('right', r'M:\MyFiles\Code\Python\Scripts\directory_tree_save_and_compare\jsons\result_night_after.json')
     view.mainloop()
