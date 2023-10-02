@@ -41,7 +41,7 @@ def _myscantree( rootdir, follow_links=False, reldir='' ):
                 current_scan_count += 1
                 if entry.is_dir():
                     if not entry.is_symlink() or follow_links:
-                        absdir = os.path.relpath(entry.path)
+                        absdir = os.path.relpath(entry.path, rootdir)
                         if absdir in visited: 
                             continue 
                         else: 
