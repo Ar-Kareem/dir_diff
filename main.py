@@ -48,13 +48,20 @@ def _myscantree( rootdir, follow_links=False, reldir='' ):
                             visited.add(absdir)
                         yield from _myscantree( entry.path, follow_links, os.path.join(reldir,entry.name) )
                 else:
-                    st = entry.stat()
+                    try:
+                        st = entry.stat()
+                        size = st.st_size
+                        mtime = st.st_mtime
+                    except FileNotFoundError:  # strange bug, $RECYCLE.BIN\\...
+                        print('FileNotFoundError', entry.path)
+                        size = -1
+                        mtime = 0
                     yield _wrap_entry( 
                         False,
                         os.path.join(reldir,entry.name), 
                         # entry.is_symlink(),
-                        st.st_size,
-                        st.st_mtime,
+                        size,
+                        mtime,
                     )
         if current_scan_count == 0:  # fix bug where empty folders are not included
             yield _wrap_entry( 
