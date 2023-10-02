@@ -193,8 +193,14 @@ class View(tk.Tk):
             messagebox.showwarning("Warning", "This file is not a valid json file. Reason: " + str(e))
             return
         if self.old_image is not None and self.new_image is not None:
-            # print('both images loaded')
-            self.rebuild_tree_and_view('./')
+            if not hasattr(self, 'cur_path_str'):  # first time loading
+                path_str = './'
+                add_to_history=True
+            else:  # if already loaded
+                self.current_node = None
+                path_str = self.cur_path_str
+                add_to_history=False
+            self.rebuild_tree_and_view(path_str, add_to_history=add_to_history)
 
     def rebuild_tree_and_view(self, path=None, add_to_history=True):
         assert self.old_image is not None and self.new_image is not None, 'both images not loaded'
