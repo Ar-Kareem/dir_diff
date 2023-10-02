@@ -35,6 +35,34 @@ class SettingsWindow(tk.Toplevel):
         self.destroy()
 
 
+class FileFolderSelectionGUI(tk.Toplevel):
+    def __init__(self, parent):
+        super().__init__(parent)
+        self.title("File/Folder Selection")
+
+        # Create buttons for selecting file and folder
+        self.select_file_button = tk.Button(self, text="Select File", command=self.select_file)
+        self.select_file_button.pack()
+
+        self.select_folder_button = tk.Button(self, text="Select Folder", command=self.select_folder)
+        self.select_folder_button.pack()
+
+        # Initialize selected path as None
+        self.selected_path = None
+
+    def select_file(self):
+        file_path = filedialog.askopenfilename(initialdir=os.getcwd(), title="Select File", filetypes=(("Json Files", "*.json"), ("All Files", "*.*")))
+        if file_path:
+            self.selected_path = file_path
+            self.destroy()
+
+    def select_folder(self):
+        folder_path = filedialog.askdirectory(initialdir=os.getcwd(), title="Select Folder")
+        if folder_path:
+            self.selected_path = folder_path
+            self.destroy()
+
+
 class View(tk.Tk):
     def __init__(self):
         super().__init__()
@@ -125,7 +153,7 @@ class View(tk.Tk):
             self.current_node = None  # otherwise it will not refresh the view
             self.rebuild_tree_and_view(self.cur_path_str, add_to_history=False)
 
-    def add_new_image_file(self, side_str, file_path=None):
+    def add_new_image_file(self, side_str, file_folder_path=None):
         if side_str == 'left':
             label = self.label_left
             image_str = 'old_image'  # self.old_image
@@ -136,24 +164,34 @@ class View(tk.Tk):
             prefix = 'New Image: '
         else:
             assert False, "side_str must be 'left' or 'right'"
-        if file_path is None:
-            file_path = filedialog.askopenfilename(initialdir=os.getcwd(), title="Select File", filetypes=(("Json Files", "*.json"), ("All Files", "*.*")))
-        if file_path == "":
+        if file_folder_path is None:
+            file_folder_gui = FileFolderSelectionGUI(self)
+            self.wait_window(file_folder_gui)
+            file_folder_path = file_folder_gui.selected_path
+        if file_folder_path is None or file_folder_path == "":
             return
-        with open(file_path, "r") as f:
-            try:
-                data = json.load(f)
-                assert 'root' in data.keys(), 'root key not found'
-                time = data.get('INFO', {}).get('timestamp', 'NO TIME FOUND')
-                rootdir = data.get('INFO', {}).get('rootdir', 'NO ROOTDIR FOUND')
-                label.config(state="normal")
-                label.delete(1.0, tk.END)
-                label.insert(tk.END, prefix + '\n' + 'Time:' + time + "\n" + rootdir)
-                label.config(state="disabled")
-                setattr(self, image_str, data)
-            except Exception as e:
-                messagebox.showwarning("Warning", "This file is not a valid json file. Reason: " + str(e))
-                return
+        # read path
+        if os.path.isdir(file_folder_path):
+            print(file_folder_path)
+            data = main.get_directory_structure_v2(file_folder_path)
+        elif os.path.isfile(file_folder_path):
+            with open(file_folder_path, "r") as f:
+                data = f.read()
+        else:
+            raise NotImplementedError("Not a valid file or folder")
+        try:
+            data = json.loads(data) if isinstance(data, str) else data
+            assert 'root' in data.keys(), 'root key not found'
+            time = data.get('INFO', {}).get('timestamp', 'NO TIME FOUND')
+            rootdir = data.get('INFO', {}).get('rootdir', 'NO ROOTDIR FOUND')
+            label.config(state="normal")
+            label.delete(1.0, tk.END)
+            label.insert(tk.END, prefix + '\n' + 'Time:' + time + "\n" + rootdir)
+            label.config(state="disabled")
+            setattr(self, image_str, data)
+        except Exception as e:
+            messagebox.showwarning("Warning", "This file is not a valid json file. Reason: " + str(e))
+            return
         if self.old_image is not None and self.new_image is not None:
             # print('both images loaded')
             self.rebuild_tree_and_view('./')
@@ -307,8 +345,8 @@ class View(tk.Tk):
 if __name__ == '__main__':
     view = View()
     frame = tk.Frame(view)
-    view.add_new_image_file('left', r'M:\MyFiles\Code\Python\Scripts\directory_tree_save_and_compare\jsons\new1.json')
-    view.add_new_image_file('right', r'M:\MyFiles\Code\Python\Scripts\directory_tree_save_and_compare\jsons\new2.json')
+    # view.add_new_image_file('left', r'M:\MyFiles\Code\Python\Scripts\directory_tree_save_and_compare\jsons\new1.json')
+    # view.add_new_image_file('right', r'M:\MyFiles\Code\Python\Scripts\directory_tree_save_and_compare\jsons\new2.json')
     # view.add_new_image_file('left', r'M:\MyFiles\Code\Python\Scripts\directory_tree_save_and_compare\jsons\result_after_everything_ssd2tb.json')
     # view.add_new_image_file('right', r'M:\MyFiles\Code\Python\Scripts\directory_tree_save_and_compare\jsons\result_night_after.json')
     view.mainloop()
