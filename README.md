@@ -20,7 +20,7 @@ Execute the `.exe` to run it. The `.exe` is not signed so your antivirus might b
 
 ### Other platforms
 
-If you want to run the application on other platforms (or want to avoid running `.exe`s on windows) then simply clone this project and execute `python compare_gui.py` after installing the conda environment (go to [build section](https://github.com/Ar-Kareem/dir_diff/edit/master/README.md#build))
+If you want to run the application on other platforms (or want to avoid running `.exe`s on windows) then simply clone this project and execute `python compare_gui.py` after installing the conda environment (go to [build section](https://github.com/Ar-Kareem/dir_diff?tab=readme-ov-file#build))
 
 ## Steps
 
