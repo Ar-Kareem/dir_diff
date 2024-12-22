@@ -11,14 +11,18 @@ This shows a comparison to the directory of a game before and after an update. W
 
 # To use
 
-## Windows
+## Install
+
+### Windows
 
 To use the application, download the latest release/zip, unzip it.
 Execute the `.exe` to run it
 
-## Other platforms
+### Other platforms
 
 If you want to run the application on other platforms (or want to avoid running `.exe`s on windows) then simply clone this project and execute `python compare_gui.py` after installing the conda environment (go to [build section](https://github.com/Ar-Kareem/dir_diff/edit/master/README.md#build))
+
+## Steps
 
 1. Click "create new image" to create snapshot of a directory then save the output `.json` file in any directory.
 
