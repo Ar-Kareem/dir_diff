@@ -3,9 +3,22 @@
 This is an application that comapres two directory images and lists what files and directories were deleted or added in an easily navigatable fashion. 
 A directory image is a snapshots of the directory or drive which stores the tree structure of the filenames into a single .json file.
 
+# Example
+
+![image](https://github.com/user-attachments/assets/fca27bc0-ee9b-47a4-9d98-b855a1f8bd35)
+
+This shows a comparison to the directory of a game before and after an update. We can see that all of the subdirectory contants are the same and only in the top-level directory we have 7 files deleted and 2 new files added (we are ignoring "size" and "modification time" in the settings menu for this example)
+
 # To use
+
+## Windows
+
 To use the application, download the latest release/zip, unzip it.
 Execute the `.exe` to run it
+
+## Other platforms
+
+If you want to run the application on other platforms (or want to avoid running `.exe`s on windows) then simply clone this project and execute `python compare_gui.py` after installing the conda environment (go to [build section](https://github.com/Ar-Kareem/dir_diff/edit/master/README.md#build))
 
 1. Click "create new image" to create snapshot of a directory then save the output `.json` file in any directory.
 
