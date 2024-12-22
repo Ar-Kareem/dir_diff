@@ -5,9 +5,15 @@ A directory image is a snapshots of the directory or drive which stores the tree
 
 # Example
 
+![image](https://github.com/user-attachments/assets/ea58c18c-7aca-4df9-8cc7-e97ad29c3371)
+
+The first example shows a comparison to the directory of a game before and after an update. We can see that no top-level files were edited but there are two directories that contain differences (one where 7 files were replaced with 2 files and another where 16 files were replaced with 17 files).
+
 ![image](https://github.com/user-attachments/assets/fca27bc0-ee9b-47a4-9d98-b855a1f8bd35)
 
-This shows a comparison to the directory of a game before and after an update. We can see that all of the subdirectory contants are the same and only in the top-level directory we have 7 files deleted and 2 new files added (we are ignoring "size" and "modification time" in the settings menu for this example)
+The second example shows the comparison inside one of the directory's. We can see that all of the subdirectory contants are the same and only in the current directory files do we have a difference where 7 files were deleted and 2 new files were added during the update. (we are ignoring "size" and "modification time" in the settings menu for this example).
+
+This application was particularly useful when having a very nested and duplicate directory on two different harddrives and I needed to quickly compare which files were added to the new version.
 
 # To use
 
