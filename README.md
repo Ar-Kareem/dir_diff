@@ -49,6 +49,8 @@ Additionally, settings can be changed to compare or ignore Size and Modification
 To build the exe:
 
 First create a conda env: `conda create --name myenv python=3.11`
+
 If already created env: `conda activate myenv`
+
 Then:
 `pyinstaller    --onefile --noconsole --windowed --icon=clocks.ico --name directory_compare compare_gui.py`
