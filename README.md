@@ -15,8 +15,8 @@ This shows a comparison to the directory of a game before and after an update. W
 
 ### Windows
 
-To use the application, download the latest release/zip, unzip it.
-Execute the `.exe` to run it
+To use the application on windows with no programming knowledge, simply download the latest release/zip, unzip it.
+Execute the `.exe` to run it. The `.exe` is not signed so your antivirus might block it.
 
 ### Other platforms
 
