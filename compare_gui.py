@@ -8,6 +8,8 @@ import json
 
 import main
 
+logger = main.get_logger()
+
 BG_COLORS = {
     'red': '#FFAAAA',
     'green': '#AAFFAA',
@@ -349,11 +351,8 @@ class View(tk.Tk):
 
 
 if __name__ == '__main__':
-    main.add_filehandler_to_loggers('directory_compare.log', [main.logger])
+    logger.info('Starting')
+    main.add_filehandler_to_loggers('directory_compare.log', [main.logger, logger])
     view = View()
-    frame = tk.Frame(view)
-    # view.add_new_image_file('left', r'M:\MyFiles\Code\Python\Scripts\directory_tree_save_and_compare\jsons\new1.json')
-    # view.add_new_image_file('right', r'M:\MyFiles\Code\Python\Scripts\directory_tree_save_and_compare\jsons\new2.json')
-    # view.add_new_image_file('left', r'M:\MyFiles\Code\Python\Scripts\directory_tree_save_and_compare\jsons\result_after_everything_ssd2tb.json')
-    # view.add_new_image_file('right', r'M:\MyFiles\Code\Python\Scripts\directory_tree_save_and_compare\jsons\result_night_after.json')
     view.mainloop()
+    logger.info('Exiting')
