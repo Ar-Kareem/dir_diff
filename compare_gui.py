@@ -349,6 +349,7 @@ class View(tk.Tk):
 
 
 if __name__ == '__main__':
+    main.add_filehandler_to_loggers('main.log', [main.logger])
     view = View()
     frame = tk.Frame(view)
     # view.add_new_image_file('left', r'M:\MyFiles\Code\Python\Scripts\directory_tree_save_and_compare\jsons\new1.json')

@@ -3,5 +3,6 @@ dist/
 build/
 jsons/
 env/
+*.log
 
 directory_compare.spec
