@@ -84,6 +84,12 @@ def _myscantree( rootdir, follow_links=False, reldir='' ):
         #         )
         #     for name in dirs:
         #         yield from _myscantree( os.path.join(path,name), follow_links, os.path.join(reldir,name) )
+    except FileNotFoundError:
+        print('FileNotFoundError', rootdir)
+        pass
+    except Exception as e:
+        print('Unknown Exception', rootdir, e)
+        raise e
 
 class _NestedDict(dict):
     def __missing__(self, key):
