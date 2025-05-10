@@ -54,7 +54,7 @@ Additionally, settings can be changed to compare or ignore Size and Modification
 
 To build the exe:
 
-First create a local conda env: `conda create -p ./env python=3.11`
+First create a local conda env: `conda create -p ./env python=3.11` then `conda activate ./env` then `pip install -r requirements.txt`
 
 If already created env: `conda activate ./env`
 
