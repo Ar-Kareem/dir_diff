@@ -3,8 +3,33 @@ from functools import reduce
 from pathlib import Path
 from datetime import datetime
 import json
-from collections import namedtuple
+from dataclasses import dataclass
+import logging
 
+def get_logger():
+    logger = logging.getLogger()
+    logger.setLevel(logging.INFO)
+    formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
+    console_handler = logging.StreamHandler()
+    console_handler.setFormatter(formatter)
+    logger.addHandler(console_handler)
+    return logger
+
+def add_filehandler_to_loggers(filename, loggers: list[logging.Logger]):
+    formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
+    file_handler = logging.FileHandler(filename)
+    file_handler.setFormatter(formatter)
+    for logger in loggers:
+        logger.addHandler(file_handler)
+
+logger = get_logger()
+
+@dataclass
+class DirEntryWrapper:
+    isLeafDir: bool
+    name: str
+    size: int
+    mtime: float
 
 def get_directory_structure(rootdir):
     """
@@ -30,7 +55,6 @@ def get_directory_structure(rootdir):
         parent[folders[-1]] = subdir
     return res
 
-_wrap_entry = namedtuple( 'DirEntryWrapper', 'isLeafDir name size mtime' )
 def _myscantree( rootdir, follow_links=False, reldir='' ):
     visited = set()
     rootdir = os.path.normpath(rootdir)
@@ -53,10 +77,10 @@ def _myscantree( rootdir, follow_links=False, reldir='' ):
                         size = st.st_size
                         mtime = st.st_mtime
                     except FileNotFoundError:  # strange bug, $RECYCLE.BIN\\...
-                        print('FileNotFoundError', entry.path)
+                        logger.error(f'FileNotFoundError: {entry.path}')
                         size = -1
                         mtime = 0
-                    yield _wrap_entry( 
+                    yield DirEntryWrapper( 
                         False,
                         os.path.join(reldir,entry.name), 
                         # entry.is_symlink(),
@@ -64,7 +88,7 @@ def _myscantree( rootdir, follow_links=False, reldir='' ):
                         mtime,
                     )
         if current_scan_count == 0:  # fix bug where empty folders are not included
-            yield _wrap_entry( 
+            yield DirEntryWrapper( 
                 True,
                 reldir, 
                 # entry.is_symlink(),
@@ -72,7 +96,7 @@ def _myscantree( rootdir, follow_links=False, reldir='' ):
                 0,
             )
     except PermissionError:
-        print('PermissionError', rootdir)
+        logger.error(f'PermissionError: {rootdir}')
         pass
         # for path, dirs, files in os.walk(rootdir):
         #     for name in files:
@@ -85,10 +109,10 @@ def _myscantree( rootdir, follow_links=False, reldir='' ):
         #     for name in dirs:
         #         yield from _myscantree( os.path.join(path,name), follow_links, os.path.join(reldir,name) )
     except FileNotFoundError:
-        print('FileNotFoundError', rootdir)
+        logger.error(f'FileNotFoundError: {rootdir}')
         pass
     except Exception as e:
-        print('Unknown Exception', rootdir, e)
+        logger.error(f'Unknown Exception: {rootdir} - {str(e)}')
         raise e
 
 class _NestedDict(dict):
@@ -100,6 +124,7 @@ def get_directory_structure_v2(rootdir):
     """
     Creates a nested dictionary that represents the folder structure of rootdir
     """
+    logger.info(f'Starting to scan directory structure of {rootdir}')
     TOP_LEVEL_NAME = 'root'
     rootdir = Path(rootdir).resolve()
     res = _NestedDict()
@@ -121,6 +146,7 @@ def get_directory_structure_v2(rootdir):
         folders = [TOP_LEVEL_NAME] + [f for f in folders if f]
         parent = reduce(lambda d, k: d[k], folders[:-1], res)  # get the parent folder by recursive dict.get for all folders until leaf
         parent[folders[-1]] = json.dumps((item.size, mtime))
+    logger.info(f'Finished scanning directory structure of {rootdir}')
     return res
 
 class Node:

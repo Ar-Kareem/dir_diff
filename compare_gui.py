@@ -88,7 +88,7 @@ class View(tk.Tk):
         self.bind("<Button-4>", lambda e: self.on_back_button())
         self.bind("<Button-5>", lambda e: self.on_forward_button())
 
-        self.button_back = tk.Button(self, text="<", command=lambda: messagebox.showwarning("Warning", "NANI ?!"))
+        self.button_back = tk.Button(self, text="<", command=lambda: messagebox.showwarning("Warning", "You can't go further back!"))
         self.button_back.grid(row=0, column=1, columnspan=2, padx=3, pady=3, sticky="w")
         self.settings_back = tk.Button(self, text="Settings", command=self.open_settings)
         self.settings_back.grid(row=0, column=2, columnspan=2, padx=3, pady=3, sticky="w")
